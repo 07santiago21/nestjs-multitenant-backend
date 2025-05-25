@@ -6,9 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Db, ObjectId } from 'mongodb';
 import * as bcryptjs from 'bcryptjs';
 import { VerifyOtpDto } from './dto/verify-otp';
-import { get } from 'http';
 import { JwtService } from '@nestjs/jwt';
-import { EmailModule } from 'src/email/email.module';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
@@ -33,7 +31,7 @@ export class AuthService {
     this.db = await this.tenantService.getDb(this.databaseName);
 
     const otpCollection = this.db.collection('otp_password');
-    //await otpCollection.dropIndex("createdAt_1")
+    //await otpCollection.dropIndex("createdAt_1")   
     await otpCollection.createIndex(
       { createdAt: 1 },
       { expireAfterSeconds: 900 }
@@ -41,9 +39,6 @@ export class AuthService {
 
   }
 
-  async onModuleDestroy() {
-    //TODO: cerrar conexión a la base de datos
-  }
 
 
 
@@ -63,12 +58,21 @@ export class AuthService {
 
     if (isOtpCreated) {
       this.emallService.sendEmailLogin(email, otp);
-      return otp;
+
+
+      return {
+        message: 'OTP enviado',
+      };
+
+      
     }
+    throw new Error('No se pudo crear el OTP');
 
   }
 
 
+
+  //TODO: si ya se uso el otp no se puede volver a usar
   async login(verifyOtpDto: VerifyOtpDto) {
 
     const { email, otp } = verifyOtpDto;
@@ -80,13 +84,14 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException("Invalid OTP");
+
     }
 
-    const payload = {role: user.role, db_name: user.db };
+    const payload = { role: user.role, db_name: user.db };
 
     const token = await this.jwtService.signAsync(payload)
 
-    return token;
+    return { token: token };
   }
 
 
@@ -169,9 +174,9 @@ export class AuthService {
 
 
   private calculateOtp(n = 6) {
-    const otp =  Math.floor(Math.random() * 10 ** n).toString();
+    const otp = Math.floor(Math.random() * 10 ** n).toString();
     return otp.padStart(n, '0');
-  
+
   }
 
   private async hashedOtp(password: string) {
@@ -179,4 +184,13 @@ export class AuthService {
     return await bcryptjs.hash(password, 12)
 
   }
+
+  async findAll() {
+
+    const admins = this.db.collection('users');
+
+    const allAdmins = await admins.find().toArray();
+    return allAdmins;
+  }
+
 }
