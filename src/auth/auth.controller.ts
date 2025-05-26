@@ -4,7 +4,6 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginAdminDto } from './dto/login-admin-dto';
 import { VerifyOtpDto } from './dto/verify-otp';
-import { Auth } from './entities/auth.entity';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guard/roles.guard';

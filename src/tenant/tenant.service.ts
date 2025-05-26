@@ -28,6 +28,14 @@ export class TenantService implements OnModuleDestroy {
     return db;
   }
 
+  async getCollection(collectionName: string,tenantId: string) {
+    
+    const db = await this.getDb(tenantId);
+    //TODO: verificar que la coleccion exista
+    return db.collection(collectionName);
+
+  }
+
   async onModuleDestroy() {
     await this.client.close();
   }

@@ -3,17 +3,17 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { TenantService } from 'src/tenant/tenant.service';
 import { ConfigService } from '@nestjs/config';
-import { Db, ObjectId } from 'mongodb';
+import { Collection, Db, ObjectId } from 'mongodb';
 import * as bcryptjs from 'bcryptjs';
 import { VerifyOtpDto } from './dto/verify-otp';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService {  //TODO:mensajes de errro y correctos errores 
 
-  private databaseName: string;
-  private db: Db;
+  private userCollection: Collection<any>;
+  private otpCollection: Collection<any>; //TODO: que no sea any, crear una interface para el otp
 
 
   constructor(private tenantService: TenantService,
@@ -21,26 +21,19 @@ export class AuthService {
     private emallService: EmailService,
     private jwtService: JwtService) { }
 
-  async onModuleInit() {
+  async onModuleInit() {//peligroso usar await aqui----> buscar como mejorar esto
 
+    const databaseName = this.configService.get<string>('ADMIN_TENANT');
+    this.otpCollection = await this.tenantService.getCollection('otp_password',databaseName);
+    this.userCollection = await this.tenantService.getCollection('users',databaseName);
 
-    //TODO: refactorizar responsabilidades,el servicio de tenant es el encargado de todo lo de la db de traer las colecciones)
-
-
-    this.databaseName = this.configService.get<string>('ADMIN_TENANT');
-    this.db = await this.tenantService.getDb(this.databaseName);
-
-    const otpCollection = this.db.collection('otp_password');
-    //await otpCollection.dropIndex("createdAt_1")   
-    await otpCollection.createIndex(
+    //await this.otpCollection.dropIndex("createdAt_1")   
+    await this.otpCollection.createIndex(
       { createdAt: 1 },
       { expireAfterSeconds: 900 }
     );
 
   }
-
-
-
 
 
   //refactorizar el access token con refresh token
@@ -62,7 +55,7 @@ export class AuthService {
 
       return {
         message: 'OTP enviado',
-      };
+      }
 
       
     }
@@ -95,9 +88,6 @@ export class AuthService {
   }
 
 
-
-
-
   private async getUserIdByEmail(email: string) {
 
     return (await this.getUserByEmail(email))._id;
@@ -111,10 +101,9 @@ export class AuthService {
 
 
 
-
   private async getUserByEmail(email: string) {
-    const users = this.db.collection('users');
-    const user = await users.findOne({ email });
+
+    const user = await this.userCollection.findOne({ email });
 
     if (!user) {
       throw new UnauthorizedException("User not found");
@@ -127,8 +116,7 @@ export class AuthService {
 
   private async existsOtpById(id: ObjectId) {
 
-    const otp = this.db.collection('otp_password');
-    const otp_password = (await otp.findOne({ idUser: id }));
+    const otp_password = (await this.otpCollection.findOne({ idUser: id }));
 
     if (!otp_password) {
 
@@ -140,8 +128,7 @@ export class AuthService {
 
   private async getOtpById(id: ObjectId) {
 
-    const otp = this.db.collection('otp_password');
-    const element = await otp.findOne({ idUser: id });
+    const element = await this.otpCollection.findOne({ idUser: id });
     if (!element) {
       throw new UnauthorizedException("User not found");
     }
@@ -150,11 +137,10 @@ export class AuthService {
   }
 
 
+
   private async createOtp(id: ObjectId, otp: string) {
 
-    const otpCollection = this.db.collection('otp_password');
     const hashedOtp = await this.hashedOtp(otp);
-
 
     const otpData = {
       idUser: id,
@@ -162,9 +148,8 @@ export class AuthService {
       createdAt: new Date(),
     };
 
-    await otpCollection.insertOne(otpData);
+    await this.otpCollection.insertOne(otpData);
     return true;
-
   }
 
 
@@ -187,9 +172,7 @@ export class AuthService {
 
   async findAll() {
 
-    const admins = this.db.collection('users');
-
-    const allAdmins = await admins.find().toArray();
+    const allAdmins = await this.userCollection.find().toArray();
     return allAdmins;
   }
 
