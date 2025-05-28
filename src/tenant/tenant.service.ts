@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MongoClient, Db } from 'mongodb';
+import { promises } from 'dns';
+import { MongoClient, Db, Collection } from 'mongodb';
 
 @Injectable()
 export class TenantService implements OnModuleDestroy {
@@ -28,11 +29,11 @@ export class TenantService implements OnModuleDestroy {
     return db;
   }
 
-  async getCollection(collectionName: string,tenantId: string) {
+  async getCollection<T=any>(collectionName: string,tenantId: string): Promise <Collection<T>> {
     
     const db = await this.getDb(tenantId);
     //TODO: verificar que la coleccion exista
-    return db.collection(collectionName);
+    return db.collection<T>(collectionName);
 
   }
 

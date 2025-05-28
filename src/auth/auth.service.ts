@@ -1,6 +1,4 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { TenantService } from 'src/tenant/tenant.service';
 import { ConfigService } from '@nestjs/config';
 import { Collection, Db, ObjectId } from 'mongodb';
@@ -8,12 +6,14 @@ import * as bcryptjs from 'bcryptjs';
 import { VerifyOtpDto } from './dto/verify-otp';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
+import { OtpDocument } from './interfaces/otp-document.interface';
+import { User } from './interfaces/user.interface';
 
 @Injectable()
 export class AuthService {  //TODO:mensajes de errro y correctos errores 
 
-  private userCollection: Collection<any>;
-  private otpCollection: Collection<any>; //TODO: que no sea any, crear una interface para el otp
+  private userCollection: Collection<User>;
+  private otpCollection: Collection<OtpDocument>;
 
 
   constructor(private tenantService: TenantService,
@@ -24,8 +24,8 @@ export class AuthService {  //TODO:mensajes de errro y correctos errores
   async onModuleInit() {//peligroso usar await aqui----> buscar como mejorar esto
 
     const databaseName = this.configService.get<string>('ADMIN_TENANT');
-    this.otpCollection = await this.tenantService.getCollection('otp_password',databaseName);
-    this.userCollection = await this.tenantService.getCollection('users',databaseName);
+    this.otpCollection = await this.tenantService.getCollection<OtpDocument>('otp_password',databaseName);
+    this.userCollection = await this.tenantService.getCollection<User>('users',databaseName,);
 
     //await this.otpCollection.dropIndex("createdAt_1")   
     await this.otpCollection.createIndex(
@@ -63,6 +63,12 @@ export class AuthService {  //TODO:mensajes de errro y correctos errores
 
   }
 
+
+  a(email:string){
+    
+    this.emallService.sendEmailLogin(email,"2222");
+
+  }
 
 
   //TODO: si ya se uso el otp no se puede volver a usar
@@ -149,11 +155,12 @@ export class AuthService {  //TODO:mensajes de errro y correctos errores
     };
 
     await this.otpCollection.insertOne(otpData);
+    
     return true;
   }
 
 
-  create(createAuthDto: CreateAuthDto) {
+  create(createAuthDto) {
     return 'This action adds a new auth';
   }
 
