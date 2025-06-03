@@ -33,7 +33,7 @@ export const loginOtpTemplate = (code: string) => `
       <div class="code">${code}</div>
       <p>Este código es válido por <strong>15 minutos</strong>.</p>
       <p>Si no solicitaste este acceso, ignora este mensaje.</p>
-      <p style="margin-top: 30px;">Gracias,<br /></p>
+      <p style="margin-top: 30px;">Gracias.<br /></p>
     </div>
   </body>
 </html>

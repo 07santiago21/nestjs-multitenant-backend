@@ -16,7 +16,7 @@ export class EmailService {
     private async sendEmail(to: string, subject: string, template: string) {
         try {
             await this.resend.emails.send({
-                from: 'onboarding@resend.dev',
+                from: 'admin@midomi.app',
                 to,
                 subject,
                 html: template,

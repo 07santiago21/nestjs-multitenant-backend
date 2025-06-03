@@ -10,8 +10,6 @@ import { RolesGuard } from './guard/roles.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService ) {}
 
-  
-
 
   @Post('generate-otp')
   loginAdmin(@Body() loginAdminDto: LoginAdminDto) {
