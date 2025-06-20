@@ -5,13 +5,14 @@ import { TenantModule } from 'src/tenant/tenant.module';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailModule } from 'src/email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
 
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtAuthGuard],
   imports: [
-
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,5 +27,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 
   ],
+  exports: [JwtAuthGuard, JwtModule]
 })
 export class AuthModule { }
